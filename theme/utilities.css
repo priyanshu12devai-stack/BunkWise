@@ -108,3 +108,34 @@
   justify-content: center;
   border-radius: 9999px;
 }
+
+@utility setup-card {
+  border-width: 1px;
+  border-color: #2d3040;
+  border-radius: 20px;
+  border-curve: continuous;
+  background-color: #151722;
+}
+
+@utility setup-primary-button {
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  border-curve: continuous;
+  background-color: #5c5cff;
+  padding-inline: 20px;
+}
+
+@utility setup-field {
+  min-height: 58px;
+  border-width: 1px;
+  border-color: #323443;
+  border-radius: 16px;
+  border-curve: continuous;
+  background-color: #181925;
+  padding-inline: 18px;
+  font-family: var(--font-jakarta);
+  font-size: 16px;
+  color: #f7f7fb;
+}

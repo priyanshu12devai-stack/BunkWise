@@ -142,10 +142,10 @@ export function AuthScreen({ mode }: AuthScreenProps) {
     decorateUrl: (url: string) => string;
   }) => {
     if (session.currentTask) {
-      return redirectToTasks({ redirectUrl: decorateUrl("/") });
+      return redirectToTasks({ redirectUrl: decorateUrl("/setup-wizard") });
     }
 
-    router.replace(decorateUrl("/") as Href);
+    router.replace(decorateUrl("/setup-wizard") as Href);
   };
 
   const handleSubmit = async () => {
@@ -295,6 +295,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
+        router.replace("/setup-wizard" as Href);
       } else if (socialSignUp?.status === "missing_requirements") {
         setAuthError("Your social account is missing required profile details.");
       }

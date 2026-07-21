@@ -33,6 +33,7 @@ function RootNavigator() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="onboarding" />
+        <Stack.Screen name="setup-wizard" />
 
         <Stack.Protected guard={!isSignedIn}>
           <Stack.Screen name="sign-up" />
