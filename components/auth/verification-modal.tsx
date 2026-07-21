@@ -12,32 +12,92 @@ import {
 
 type VerificationModalProps = {
   email: string;
+  error?: string | null;
   visible: boolean;
+  onCodeChange?: () => void;
   onClose: () => void;
+  onResend: () => Promise<boolean>;
+  onVerify: (code: string) => Promise<boolean>;
 };
 
 const CODE_LENGTH = 6;
+type SubmissionType = "resend" | "verify";
 
 export function VerificationModal({
   email,
+  error,
   visible,
+  onCodeChange,
   onClose,
+  onResend,
+  onVerify,
 }: VerificationModalProps) {
   const inputRef = useRef<TextInput>(null);
+  const isSubmittingRef = useRef(false);
   const [code, setCode] = useState("");
+  const [submissionType, setSubmissionType] =
+    useState<SubmissionType | null>(null);
+  const isSubmitting = submissionType !== null;
+
+  const clearCode = () => {
+    setCode("");
+    inputRef.current?.clear();
+  };
 
   const handleClose = () => {
     Keyboard.dismiss();
-    setCode("");
+    clearCode();
     onClose();
+  };
+
+  const handleVerify = async (nextCode: string) => {
+    if (isSubmittingRef.current) return;
+
+    isSubmittingRef.current = true;
+    setSubmissionType("verify");
+    Keyboard.dismiss();
+
+    try {
+      const isVerified = await onVerify(nextCode);
+
+      if (!isVerified) {
+        clearCode();
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }
+    } finally {
+      isSubmittingRef.current = false;
+      setSubmissionType(null);
+    }
+  };
+
+  const handleResend = async () => {
+    if (isSubmittingRef.current) return;
+
+    isSubmittingRef.current = true;
+    setSubmissionType("resend");
+
+    try {
+      const wasSent = await onResend();
+
+      if (wasSent) {
+        clearCode();
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }
+    } finally {
+      isSubmittingRef.current = false;
+      setSubmissionType(null);
+    }
   };
 
   const handleCodeChange = (value: string) => {
     const nextCode = value.replace(/\D/g, "").slice(0, CODE_LENGTH);
     setCode(nextCode);
+    if (nextCode.length > 0) {
+      onCodeChange?.();
+    }
 
     if (nextCode.length === CODE_LENGTH) {
-      Keyboard.dismiss();
+      void handleVerify(nextCode);
     }
   };
 
@@ -123,6 +183,7 @@ export function VerificationModal({
                 keyboardType="number-pad"
                 maxLength={CODE_LENGTH}
                 onChangeText={handleCodeChange}
+                editable={!isSubmitting}
                 style={{
                   position: "absolute",
                   width: "100%",
@@ -135,8 +196,24 @@ export function VerificationModal({
             </TouchableOpacity>
 
             <Text className="mt-5 text-center font-jakarta-medium text-[13px] leading-5 text-[#777C94]">
-              Enter the 6-digit code to continue
+              {error ??
+                (submissionType === "verify"
+                  ? "Verifying your code..."
+                  : submissionType === "resend"
+                    ? "Sending a new code..."
+                    : "Enter the 6-digit code to continue")}
             </Text>
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              className="mt-3 px-4 py-2"
+              disabled={isSubmitting}
+              onPress={() => void handleResend()}
+            >
+              <Text className="font-jakarta-semibold text-[13px] text-[#C0BFFF] underline">
+                Resend code
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>

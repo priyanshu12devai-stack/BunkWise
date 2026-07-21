@@ -1,25 +1,24 @@
 import "../global.css";
 
-import { useEffect } from "react";
+import { ClerkProvider, useAuth } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 
 import { useAppFonts } from "@/hooks/use-app-fonts";
 import { colors } from "@/theme";
 
-SplashScreen.preventAutoHideAsync();
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-export default function RootLayout() {
+if (!publishableKey) {
+  throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to the .env file.");
+}
+
+function RootNavigator() {
   const [fontsLoaded, fontError] = useAppFonts();
+  const { isLoaded, isSignedIn } = useAuth();
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) {
+  if ((!fontsLoaded && !fontError) || !isLoaded) {
     return null;
   }
 
@@ -31,7 +30,23 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.app.background },
           headerShown: false,
         }}
-      />
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" />
+
+        <Stack.Protected guard={!isSignedIn}>
+          <Stack.Screen name="sign-up" />
+          <Stack.Screen name="sign-in" />
+        </Stack.Protected>
+      </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
+      <RootNavigator />
+    </ClerkProvider>
   );
 }
