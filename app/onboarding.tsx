@@ -1,9 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 const mutedTextColor = "#6D7396";
 
 export default function OnboardingScreen() {
+  const router = useRouter();
+
   return (
     <ScrollView
       className="bg-[#090B17]"
@@ -43,6 +46,7 @@ export default function OnboardingScreen() {
             accessibilityRole="button"
             activeOpacity={0.82}
             className="mt-12 h-12 w-full items-center justify-center rounded-[14px] bg-[#615FF8]"
+            onPress={() => router.push("/sign-up")}
           >
             <Text className="font-jakarta-bold text-[16px] leading-6 text-white">
               Get Started
