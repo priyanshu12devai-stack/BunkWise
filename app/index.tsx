@@ -7,12 +7,11 @@ import { StatusBar } from "expo-status-bar";
 
 import {
   clearAllSemesterSetupState,
-  clearSemesterSetupState,
 } from "@/store/semester-setup-store";
 
 export default function Index() {
   const router = useRouter();
-  const { isSignedIn, signOut, userId } = useAuth();
+  const { isSignedIn, signOut } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isClearingStorage, setIsClearingStorage] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -28,9 +27,7 @@ export default function Index() {
     setSignOutError(null);
     setIsLoading(true);
     try {
-      const signedOutUserId = userId;
       await signOut();
-      clearSemesterSetupState(signedOutUserId);
       router.replace("/onboarding");
     } catch {
       setSignOutError("Unable to sign out. Please try again.");
@@ -69,6 +66,18 @@ export default function Index() {
               <Text className="font-jakarta-bold text-[34px] leading-[42px] text-[#7C3AED]">
                 BunkWise
               </Text>
+
+              <TouchableOpacity
+                accessibilityLabel="Setup semester"
+                accessibilityRole="button"
+                activeOpacity={0.82}
+                className="mt-6 w-full items-center justify-center rounded-2xl bg-[#7C3AED] p-4"
+                onPress={() => router.push("/setup-wizard")}
+              >
+                <Text className="font-jakarta-bold text-[17px] leading-6 text-white">
+                  Setup Semester
+                </Text>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 accessibilityRole="button"

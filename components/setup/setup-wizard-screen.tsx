@@ -1311,12 +1311,14 @@ function HolidaysStep({ draft, setDraft }: DraftStepProps) {
 
 function FinishedStep({ draft }: { draft: SetupDraft }) {
   const { userId } = useAuth();
+  const router = useRouter();
   const completeSetup = useSemesterSetupStore((state) => state.completeSetup);
 
   const goToDashboard = () => {
     if (!userId) return;
 
     completeSetup(userId, draft);
+    router.replace("/");
   };
 
   return (
@@ -1356,9 +1358,22 @@ type DraftStepProps = {
 };
 
 export function SetupWizardScreen() {
+  const { userId } = useAuth();
   const router = useRouter();
+  const savedSetup = useSemesterSetupStore((state) =>
+    userId
+      ? state.setupDraftsByUserId[userId] ?? state.setupsByUserId[userId]
+      : undefined,
+  );
+  const saveSetupDraft = useSemesterSetupStore((state) => state.saveSetupDraft);
   const [step, setStep] = useState<WizardStep>(1);
-  const [draft, setDraft] = useState<SetupDraft>(initialDraft);
+  const [draft, setDraft] = useState<SetupDraft>(() => savedSetup ?? initialDraft);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    saveSetupDraft(userId, draft);
+  }, [draft, saveSetupDraft, userId]);
 
   const canContinue = useMemo(() => {
     if (step === 1) {

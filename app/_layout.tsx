@@ -55,11 +55,10 @@ function RootNavigator() {
           headerShown: false,
         }}
       >
-        <Stack.Protected guard={Boolean(isSignedIn && hasCompletedSetup)}>
-          <Stack.Screen name="index" />
-        </Stack.Protected>
-
-        <Stack.Protected guard={Boolean(isSignedIn && !hasCompletedSetup)}>
+        <Stack.Protected guard={Boolean(isSignedIn)}>
+          <Stack.Protected guard={hasCompletedSetup}>
+            <Stack.Screen name="index" />
+          </Stack.Protected>
           <Stack.Screen name="setup-wizard" />
         </Stack.Protected>
 
