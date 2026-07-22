@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAuth } from "@clerk/expo";
 import DateTimePicker, {
   DateTimePickerAndroid,
   type DateTimePickerEvent,
@@ -28,6 +29,10 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 
+import {
+  type SemesterSetupData,
+  useSemesterSetupStore,
+} from "@/store/semester-setup-store";
 import type {
   DateString,
   DayOfWeek,
@@ -88,14 +93,7 @@ const EMPTY_SCHEDULE: WeeklySchedule = {
 
 type WizardStep = 1 | 2 | 3 | 4 | 5 | "finished";
 
-type SetupDraft = {
-  academicYear: string;
-  minimumAttendancePercentage: number;
-  regularWorkingDays: DayOfWeek[];
-  semester: Semester;
-  subjects: Subject[];
-  weeklySchedule: WeeklySchedule;
-};
+type SetupDraft = SemesterSetupData;
 
 const initialDraft: SetupDraft = {
   academicYear: "2024–25",
@@ -1312,7 +1310,14 @@ function HolidaysStep({ draft, setDraft }: DraftStepProps) {
 }
 
 function FinishedStep({ draft }: { draft: SetupDraft }) {
-  const router = useRouter();
+  const { userId } = useAuth();
+  const completeSetup = useSemesterSetupStore((state) => state.completeSetup);
+
+  const goToDashboard = () => {
+    if (!userId) return;
+
+    completeSetup(userId, draft);
+  };
 
   return (
     <ScrollView
@@ -1337,7 +1342,7 @@ function FinishedStep({ draft }: { draft: SetupDraft }) {
             </View>
           ))}
         </View>
-        <TouchableOpacity className="setup-primary-button mt-8 w-full" onPress={() => router.replace("/")}>
+        <TouchableOpacity className="setup-primary-button mt-8 w-full" onPress={goToDashboard}>
           <Text className="font-jakarta-bold text-[18px] text-white">Go to Dashboard</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -1365,7 +1370,7 @@ export function SetupWizardScreen() {
 
   const goBack = () => {
     if (typeof step === "number" && step > 1) setStep((step - 1) as WizardStep);
-    else router.back();
+    else if (router.canGoBack()) router.back();
   };
 
   const continueWizard = () => {

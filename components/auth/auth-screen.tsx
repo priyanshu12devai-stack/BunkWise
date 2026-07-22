@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useClerk, useSignIn, useSignUp, useSSO } from "@clerk/expo";
-import { type Href, Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { useState } from "react";
 import {
   ScrollView,
@@ -114,7 +114,6 @@ function isExistingAccountError(error: ClerkFlowError) {
 
 export function AuthScreen({ mode }: AuthScreenProps) {
   const isSignUp = mode === "sign-up";
-  const router = useRouter();
   const { redirectToTasks } = useClerk();
   const { signIn, fetchStatus: signInFetchStatus } = useSignIn();
   const { signUp, fetchStatus: signUpFetchStatus } = useSignUp();
@@ -144,8 +143,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
     if (session.currentTask) {
       return redirectToTasks({ redirectUrl: decorateUrl("/setup-wizard") });
     }
-
-    router.replace(decorateUrl("/setup-wizard") as Href);
   };
 
   const handleSubmit = async () => {
@@ -295,7 +292,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
-        router.replace("/setup-wizard" as Href);
       } else if (socialSignUp?.status === "missing_requirements") {
         setAuthError("Your social account is missing required profile details.");
       }
