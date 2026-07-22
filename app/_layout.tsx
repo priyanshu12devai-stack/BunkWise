@@ -14,7 +14,7 @@ import { colors } from "@/theme";
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export const unstable_settings = {
-  anchor: "index",
+  anchor: "(tabs)",
 };
 
 if (!publishableKey) {
@@ -57,7 +57,7 @@ function RootNavigator() {
       >
         <Stack.Protected guard={Boolean(isSignedIn)}>
           <Stack.Protected guard={hasCompletedSetup}>
-            <Stack.Screen name="index" />
+            <Stack.Screen name="(tabs)" />
           </Stack.Protected>
           <Stack.Screen name="setup-wizard" />
         </Stack.Protected>
