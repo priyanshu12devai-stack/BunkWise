@@ -28,8 +28,10 @@ type CompletedSemesterSetup = SemesterSetupData & {
 
 type SemesterSetupState = {
   hasHydrated: boolean;
+  setupDraftsByUserId: Record<string, SemesterSetupData>;
   setupsByUserId: Record<string, CompletedSemesterSetup>;
   completeSetup: (userId: string, setup: SemesterSetupData) => void;
+  saveSetupDraft: (userId: string, setup: SemesterSetupData) => void;
   resetSetups: (userId: string) => void;
   resetAllSetups: () => void;
   setHasHydrated: (hasHydrated: boolean) => void;
@@ -48,9 +50,14 @@ export const useSemesterSetupStore = create<SemesterSetupState>()(
   persist(
     (set) => ({
       hasHydrated: false,
+      setupDraftsByUserId: {},
       setupsByUserId: {},
       completeSetup: (userId, setup) =>
         set((state) => ({
+          setupDraftsByUserId: {
+            ...state.setupDraftsByUserId,
+            [userId]: setup,
+          },
           setupsByUserId: {
             ...state.setupsByUserId,
             [userId]: {
@@ -59,20 +66,33 @@ export const useSemesterSetupStore = create<SemesterSetupState>()(
             },
           },
         })),
+      saveSetupDraft: (userId, setup) =>
+        set((state) => ({
+          setupDraftsByUserId: {
+            ...state.setupDraftsByUserId,
+            [userId]: setup,
+          },
+        })),
       resetSetups: (userId) =>
         set((state) => {
+          const setupDraftsByUserId = { ...state.setupDraftsByUserId };
           const setupsByUserId = { ...state.setupsByUserId };
+          delete setupDraftsByUserId[userId];
           delete setupsByUserId[userId];
 
-          return { setupsByUserId };
+          return { setupDraftsByUserId, setupsByUserId };
         }),
-      resetAllSetups: () => set({ setupsByUserId: {} }),
+      resetAllSetups: () =>
+        set({ setupDraftsByUserId: {}, setupsByUserId: {} }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
     {
       name: "bunkwise-semester-setup",
       storage: createJSONStorage(getStorage),
-      partialize: (state) => ({ setupsByUserId: state.setupsByUserId }),
+      partialize: (state) => ({
+        setupDraftsByUserId: state.setupDraftsByUserId,
+        setupsByUserId: state.setupsByUserId,
+      }),
       onRehydrateStorage: (state) => () => {
         state.setHasHydrated(true);
       },
