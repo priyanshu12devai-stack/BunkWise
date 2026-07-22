@@ -1,15 +1,20 @@
-import { useAuth, useClerk } from "@clerk/expo";
-import { type Href, useRouter } from "expo-router";
+import { useAuth } from "@clerk/expo";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
+import {
+  clearAllSemesterSetupState,
+  clearSemesterSetupState,
+} from "@/store/semester-setup-store";
+
 export default function Index() {
   const router = useRouter();
-  const { isSignedIn } = useAuth();
-  const { signOut } = useClerk();
+  const { isSignedIn, signOut, userId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isClearingStorage, setIsClearingStorage] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
 
   const handleAction = async () => {
@@ -23,11 +28,25 @@ export default function Index() {
     setSignOutError(null);
     setIsLoading(true);
     try {
-      await signOut(() => router.replace("/"));
+      const signedOutUserId = userId;
+      await signOut();
+      clearSemesterSetupState(signedOutUserId);
+      router.replace("/onboarding");
     } catch {
       setSignOutError("Unable to sign out. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const clearSetupState = async () => {
+    if (isClearingStorage) return;
+
+    setIsClearingStorage(true);
+    try {
+      await clearAllSemesterSetupState();
+    } finally {
+      setIsClearingStorage(false);
     }
   };
 
@@ -54,12 +73,12 @@ export default function Index() {
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.82}
-                className="mt-5 h-14 items-center justify-center rounded-[16px] bg-[#7C3AED] px-10"
+                className="mt-4 w-full items-center justify-center rounded-2xl bg-red-500/10 p-4"
                 disabled={isLoading}
                 onPress={() => void handleAction()}
                 style={{ opacity: isLoading ? 0.65 : 1 }}
               >
-                <Text className="font-jakarta-semibold text-[17px] text-white">
+                <Text className="font-jakarta-semibold text-[17px] text-red-500">
                   {isLoading ? "Signing Out..." : isSignedIn ? "Sign Out" : "Onboard"}
                 </Text>
               </TouchableOpacity>
@@ -69,21 +88,22 @@ export default function Index() {
                   {signOutError}
                 </Text>
               ) : null}
+
+              {/* TODO: Remove this temporary testing button before production. */}
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.86}
+                className="mt-4 w-full items-center justify-center rounded-2xl bg-zinc-800 p-4"
+                disabled={isClearingStorage}
+                onPress={() => void clearSetupState()}
+                style={{ opacity: isClearingStorage ? 0.65 : 1 }}
+              >
+                <Text className="font-jakarta-bold text-[16px] leading-6 text-white">
+                  {isClearingStorage ? "Clearing..." : "Clear Setup State"}
+                </Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
-
-          {/* TODO: Remove this temporary testing button before production. */}
-          <TouchableOpacity
-            accessibilityRole="button"
-            activeOpacity={0.86}
-            className="ds-button absolute bottom-4 self-center rounded-full bg-primary px-8 py-4"
-            onPress={() => router.push("/setup-wizard" as Href)}
-            style={{ boxShadow: "0 10px 28px rgba(99, 102, 241, 0.38)" }}
-          >
-            <Text className="font-jakarta-bold text-[16px] leading-6 text-white">
-              Test Setup Wizard
-            </Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </>
