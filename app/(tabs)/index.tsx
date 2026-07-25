@@ -1,5 +1,5 @@
-import { PlaceholderTabScreen } from "@/components/navigation/placeholder-tab-screen";
+import { HomeDashboardScreen } from "@/components/home/home-dashboard-screen";
 
 export default function HomeScreen() {
-  return <PlaceholderTabScreen name="Home" />;
+  return <HomeDashboardScreen />;
 }

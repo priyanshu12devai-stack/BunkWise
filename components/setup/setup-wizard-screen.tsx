@@ -31,8 +31,8 @@ import Svg, { Circle } from "react-native-svg";
 
 import {
   type SemesterSetupData,
-  useSemesterSetupStore,
-} from "@/store/semester-setup-store";
+  useAttendanceStore,
+} from "@/store/attendance-store";
 import type {
   DateString,
   DayOfWeek,
@@ -1310,14 +1310,9 @@ function HolidaysStep({ draft, setDraft }: DraftStepProps) {
 }
 
 function FinishedStep({ draft }: { draft: SetupDraft }) {
-  const { userId } = useAuth();
   const router = useRouter();
-  const completeSetup = useSemesterSetupStore((state) => state.completeSetup);
 
   const goToDashboard = () => {
-    if (!userId) return;
-
-    completeSetup(userId, draft);
     router.replace("/");
   };
 
@@ -1360,12 +1355,13 @@ type DraftStepProps = {
 export function SetupWizardScreen() {
   const { userId } = useAuth();
   const router = useRouter();
-  const savedSetup = useSemesterSetupStore((state) =>
+  const savedSetup = useAttendanceStore((state) =>
     userId
       ? state.setupDraftsByUserId[userId] ?? state.setupsByUserId[userId]
       : undefined,
   );
-  const saveSetupDraft = useSemesterSetupStore((state) => state.saveSetupDraft);
+  const saveSetupDraft = useAttendanceStore((state) => state.saveSetupDraft);
+  const completeSetup = useAttendanceStore((state) => state.completeSetup);
   const [step, setStep] = useState<WizardStep>(1);
   const [draft, setDraft] = useState<SetupDraft>(() => savedSetup ?? initialDraft);
 
@@ -1391,13 +1387,19 @@ export function SetupWizardScreen() {
   const continueWizard = () => {
     if (!canContinue || typeof step !== "number") return;
     if (step === 5) {
-      setDraft((current) => ({
-        ...current,
+      const completedDraft: SetupDraft = {
+        ...draft,
         semester: {
-          ...current.semester,
-          totalWeeks: calculateWeeks(current.semester.startDate, current.semester.endDate),
+          ...draft.semester,
+          totalWeeks: calculateWeeks(
+            draft.semester.startDate,
+            draft.semester.endDate,
+          ),
         },
-      }));
+      };
+
+      setDraft(completedDraft);
+      if (userId) completeSetup(userId, completedDraft);
       setStep("finished");
       return;
     }

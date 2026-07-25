@@ -2,6 +2,7 @@ import { useFonts } from "expo-font";
 
 export function useAppFonts() {
   return useFonts({
+    Outfit: require("@/assets/fonts/Outfit-Variable.ttf"),
     "PlusJakartaSans-Regular": require("@/assets/fonts/PlusJakartaSans-Regular.ttf"),
     "PlusJakartaSans-Medium": require("@/assets/fonts/PlusJakartaSans-Medium.ttf"),
     "PlusJakartaSans-SemiBold": require("@/assets/fonts/PlusJakartaSans-SemiBold.ttf"),

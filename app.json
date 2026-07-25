@@ -42,6 +42,14 @@
       ],
       "@clerk/expo",
       "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow BunkWise to access your photos so you can choose a profile picture.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       "@react-native-community/datetimepicker"
     ],
     "experiments": {
