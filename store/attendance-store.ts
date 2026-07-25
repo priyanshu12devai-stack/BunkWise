@@ -390,7 +390,6 @@ export const useAttendanceStore = create<AttendanceState>()(
           const nextSlots = (setup.weeklySchedule[day] ?? []).flatMap(
             (slot) => {
               if (slot.id !== slotId) return [slot];
-              if (slot.effectiveFromDate === effectiveFromDate) return [];
 
               return [
                 {
