@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft,
+  Ban,
   CalendarDays,
   Check,
   Trash2,
@@ -141,6 +142,8 @@ export function SubjectDetailScreen({ subjectId }: { subjectId: string }) {
     () => calculateAttendanceSummary(subjectLogs, target),
     [subjectLogs, target],
   );
+  const today = getLocalDateString(new Date());
+  const todayLog = subjectLogs.find((log) => log.date === today);
 
   const tone =
     summary.total === 0 || summary.percentage >= target
@@ -179,18 +182,23 @@ export function SubjectDetailScreen({ subjectId }: { subjectId: string }) {
         ? "text-[#F59E0B]"
         : "text-[#FF5C82]";
 
-  const addAttendance = async (
-    status: Extract<AttendanceStatus, "present" | "absent">,
-  ) => {
-    if (!userId || !setup || !subject) return;
+  const addAttendance = async (status: AttendanceStatus) => {
+    if (
+      !userId ||
+      !setup ||
+      !subject ||
+      subject.archivedFromDate ||
+      todayLog
+    ) {
+      return;
+    }
 
-    const now = new Date();
     const log: AttendanceLog = {
-      id: `manual-${subject.id}-${now.getTime()}`,
+      id: `manual-${subject.id}-${today}`,
       semesterId: setup.semester.id,
       subjectId: subject.id,
       scheduleSlotId: `manual-${subject.id}`,
-      date: getLocalDateString(now),
+      date: today,
       status,
     };
 
@@ -198,7 +206,9 @@ export function SubjectDetailScreen({ subjectId }: { subjectId: string }) {
     await Haptics.impactAsync(
       status === "present"
         ? Haptics.ImpactFeedbackStyle.Light
-        : Haptics.ImpactFeedbackStyle.Medium,
+        : status === "absent"
+          ? Haptics.ImpactFeedbackStyle.Medium
+          : Haptics.ImpactFeedbackStyle.Soft,
     );
   };
 
@@ -336,40 +346,114 @@ export function SubjectDetailScreen({ subjectId }: { subjectId: string }) {
           </View>
         </Animated.View>
 
-        <Animated.View
-          className="mt-4 flex-row gap-3"
-          entering={FadeInDown.delay(110).duration(240)}
-        >
-          <TouchableOpacity
-            accessibilityLabel="Add attended class"
-            accessibilityRole="button"
-            activeOpacity={0.72}
-            className="min-h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-[18px] bg-[#0D3A33]"
-            onPress={() => addAttendance("present")}
+        {!subject.archivedFromDate ? (
+          <Animated.View
+            className="mt-4 flex-row gap-2"
+            entering={FadeInDown.delay(110).duration(240)}
           >
-            <View className="h-7 w-7 items-center justify-center rounded-full bg-[#10D6A0]">
-              <Check color="#06261F" size={17} strokeWidth={3} />
-            </View>
-            <Text className="font-jakarta-bold text-[14px] text-[#10D6A0]">
-              + Attended
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityLabel={
+                todayLog
+                  ? "Attendance is already marked today"
+                  : "Mark today present"
+              }
+              accessibilityRole="button"
+              accessibilityState={{ disabled: Boolean(todayLog) }}
+              activeOpacity={0.72}
+              className={`min-h-[58px] flex-1 items-center justify-center gap-1.5 rounded-[18px] bg-[#0D3A33] px-1 ${
+                todayLog ? "opacity-40" : ""
+              }`}
+              disabled={Boolean(todayLog)}
+              onPress={() => addAttendance("present")}
+            >
+              <View className="h-6 w-6 items-center justify-center rounded-full bg-[#10D6A0]">
+                <Check color="#06261F" size={15} strokeWidth={3} />
+              </View>
+              <Text
+                adjustsFontSizeToFit
+                className="font-jakarta-bold text-[11px] text-[#10D6A0]"
+                minimumFontScale={0.8}
+                numberOfLines={1}
+              >
+                Present
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            accessibilityLabel="Add absent class"
-            accessibilityRole="button"
-            activeOpacity={0.72}
-            className="min-h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-[18px] bg-[#3B1825]"
-            onPress={() => addAttendance("absent")}
+            <TouchableOpacity
+              accessibilityLabel={
+                todayLog
+                  ? "Attendance is already marked today"
+                  : "Mark today absent"
+              }
+              accessibilityRole="button"
+              accessibilityState={{ disabled: Boolean(todayLog) }}
+              activeOpacity={0.72}
+              className={`min-h-[58px] flex-1 items-center justify-center gap-1.5 rounded-[18px] bg-[#3B1825] px-1 ${
+                todayLog ? "opacity-40" : ""
+              }`}
+              disabled={Boolean(todayLog)}
+              onPress={() => addAttendance("absent")}
+            >
+              <View className="h-6 w-6 items-center justify-center rounded-full bg-[#FF5079]">
+                <X color="#2B0712" size={15} strokeWidth={3} />
+              </View>
+              <Text
+                adjustsFontSizeToFit
+                className="font-jakarta-bold text-[11px] text-[#FF668A]"
+                minimumFontScale={0.8}
+                numberOfLines={1}
+              >
+                Absent
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              accessibilityLabel={
+                todayLog
+                  ? "Attendance is already marked today"
+                  : "Mark today's class cancelled"
+              }
+              accessibilityRole="button"
+              accessibilityState={{ disabled: Boolean(todayLog) }}
+              activeOpacity={0.72}
+              className={`min-h-[58px] flex-1 items-center justify-center gap-1.5 rounded-[18px] bg-[#292B35] px-1 ${
+                todayLog ? "opacity-40" : ""
+              }`}
+              disabled={Boolean(todayLog)}
+              onPress={() => addAttendance("cancelled")}
+            >
+              <View className="h-6 w-6 items-center justify-center rounded-full bg-zinc-500">
+                <Ban color="#18181B" size={14} strokeWidth={2.8} />
+              </View>
+              <Text
+                adjustsFontSizeToFit
+                className="font-jakarta-bold text-[11px] text-zinc-400"
+                minimumFontScale={0.72}
+                numberOfLines={1}
+              >
+                Cancelled
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        ) : null}
+
+        {todayLog ? (
+          <Animated.View
+            className="mt-3 rounded-2xl border border-[#292C38] bg-[#131622] px-4 py-3"
+            entering={FadeInDown.duration(180)}
+            layout={LinearTransition.duration(180)}
           >
-            <View className="h-7 w-7 items-center justify-center rounded-full bg-[#FF5079]">
-              <X color="#2B0712" size={17} strokeWidth={3} />
-            </View>
-            <Text className="font-jakarta-bold text-[14px] text-[#FF668A]">
-              + Absent
+            <Text className="text-center font-jakarta-medium text-[12px] leading-5 text-[#8B90AD]">
+              Today is already marked as{" "}
+              <Text
+                className={`font-jakarta-semibold ${STATUS_STYLES[todayLog.status].text}`}
+              >
+                {STATUS_STYLES[todayLog.status].label}
+              </Text>
+              . Tap its status in history to edit.
             </Text>
-          </TouchableOpacity>
-        </Animated.View>
+          </Animated.View>
+        ) : null}
 
         <View className="mb-3 mt-8 flex-row items-end justify-between">
           <Text className="font-outfit text-[22px] font-semibold text-white">

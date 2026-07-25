@@ -1,5 +1,5 @@
-import { PlaceholderTabScreen } from "@/components/navigation/placeholder-tab-screen";
+import { AnalyticsScreen as AnalyticsScreenContent } from "@/components/analytics/analytics-screen";
 
 export default function AnalyticsScreen() {
-  return <PlaceholderTabScreen name="Analytics" />;
+  return <AnalyticsScreenContent />;
 }
