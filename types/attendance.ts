@@ -36,6 +36,7 @@ export type Subject = {
   name: string;
   courseCode: string;
   minimumAttendancePercentage: number;
+  archivedFromDate?: DateString;
 };
 
 export type ScheduleSlot = {
@@ -44,6 +45,12 @@ export type ScheduleSlot = {
   startTime: TimeString;
   endTime: TimeString;
   room: string;
+  /**
+   * Schedule changes are forward-only. Legacy/setup slots omit these fields
+   * and remain valid for the full semester.
+   */
+  effectiveFromDate?: DateString;
+  effectiveUntilDate?: DateString;
 };
 
 export type WeeklySchedule = Record<DayOfWeek, ScheduleSlot[]>;

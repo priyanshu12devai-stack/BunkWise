@@ -14,30 +14,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 
-import { calculateAttendanceSummary } from "@/lib/attendance";
-import { useAttendanceStore } from "@/store/attendance-store";
 import { EditProfileModal } from "@/components/home/edit-profile-modal";
-import type {
-  DayOfWeek,
-  ScheduleSlot,
-  Subject,
-} from "@/types/attendance";
+import { calculateAttendanceSummary } from "@/lib/attendance";
+import {
+  getLocalDateString,
+  getScheduleSlotsForDate,
+} from "@/lib/schedule";
+import { useAttendanceStore } from "@/store/attendance-store";
+import type { ScheduleSlot, Subject } from "@/types/attendance";
 
 const SUBJECT_COLORS = ["#6863FF", "#F59E0B", "#ED4694", "#13BF91", "#2BC9E5"];
 const RING_SIZE = 126;
 const RING_STROKE = 13;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
 const RING_CIRCUMFERENCE = Math.PI * 2 * RING_RADIUS;
-
-const DAY_KEYS: DayOfWeek[] = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
 
 type ClassItem = ScheduleSlot & {
   subject: Subject;
@@ -161,12 +151,12 @@ export function HomeDashboardScreen() {
   const todayClasses = useMemo<ClassItem[]>(() => {
     if (!setup) return [];
 
-    const day = DAY_KEYS[new Date().getDay()];
+    const today = getLocalDateString();
     const subjectsById = new Map(
       setup.subjects.map((subject) => [subject.id, subject]),
     );
 
-    return (setup.weeklySchedule[day] ?? [])
+    return getScheduleSlotsForDate(setup.weeklySchedule, today)
       .map((slot) => {
         const subject = subjectsById.get(slot.subjectId);
         return subject ? { ...slot, subject } : null;

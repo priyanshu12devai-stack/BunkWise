@@ -7,6 +7,10 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { calculateAttendanceSummary } from "@/lib/attendance";
+import {
+  getLocalDateString,
+  isSubjectActiveOn,
+} from "@/lib/schedule";
 import { useAttendanceStore } from "@/store/attendance-store";
 import type { Subject } from "@/types/attendance";
 
@@ -189,20 +193,26 @@ export function SubjectsOverviewScreen() {
   );
   const subjectOverviews = useMemo(
     () =>
-      (setup?.subjects ?? []).map((subject) => {
-        const summary = calculateAttendanceSummary(
-          (attendance ?? []).filter((log) => log.subjectId === subject.id),
-          subject.minimumAttendancePercentage,
-        );
-
-        return {
-          status: getSubjectStatus(
-            summary.percentage,
+      (setup?.subjects ?? [])
+        .filter((subject) =>
+          isSubjectActiveOn(subject, getLocalDateString()),
+        )
+        .map((subject) => {
+          const summary = calculateAttendanceSummary(
+            (attendance ?? []).filter(
+              (log) => log.subjectId === subject.id,
+            ),
             subject.minimumAttendancePercentage,
-          ),
-          subject,
-        };
-      }),
+          );
+
+          return {
+            status: getSubjectStatus(
+              summary.percentage,
+              subject.minimumAttendancePercentage,
+            ),
+            subject,
+          };
+        }),
     [attendance, setup?.subjects],
   );
   const statusCounts = useMemo(

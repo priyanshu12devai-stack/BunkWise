@@ -52,7 +52,9 @@ export function EditProfileModal({ onClose }: EditProfileModalProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  userRef.current = user;
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     const currentUser = userRef.current;
