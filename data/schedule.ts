@@ -380,7 +380,7 @@ export const attendanceLogs: AttendanceLog[] = [
     subjectId: "subject-engineering-physics",
     scheduleSlotId: "monday-engineering-physics",
     date: "2026-07-13",
-    status: "present",
+    status: "absent",
   },
   {
     id: "attendance-2026-07-13-web-development",
@@ -396,7 +396,7 @@ export const attendanceLogs: AttendanceLog[] = [
     subjectId: "subject-database-management",
     scheduleSlotId: "tuesday-database-management",
     date: "2026-07-14",
-    status: "present",
+    status: "absent",
   },
   {
     id: "attendance-2026-07-14-discrete-mathematics",
@@ -468,7 +468,7 @@ export const attendanceLogs: AttendanceLog[] = [
     subjectId: "subject-web-development",
     scheduleSlotId: "friday-web-development",
     date: "2026-07-17",
-    status: "present",
+    status: "absent",
   },
   {
     id: "attendance-2026-07-17-database-management",

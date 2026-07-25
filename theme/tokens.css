@@ -6,6 +6,7 @@
   --font-jakarta-semibold: "PlusJakartaSans-SemiBold";
   --font-jakarta-bold: "PlusJakartaSans-Bold";
   --font-jakarta-extrabold: "PlusJakartaSans-ExtraBold";
+  --font-outfit: "Outfit";
 
   /* Primary — Indigo */
   --color-primary: #6366f1;
@@ -71,6 +72,8 @@
   --color-app-text: #e0e7ff;
   --color-app-text-muted: #9295aa;
   --color-app-danger: #fca5a5;
+  --color-safe: #10d6a0;
+  --color-destructive: #ff5079;
 
   /* Typography */
   --text-display: 48px;

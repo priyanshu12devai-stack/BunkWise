@@ -1,5 +1,5 @@
-import { PlaceholderTabScreen } from "@/components/navigation/placeholder-tab-screen";
+import { SubjectsOverviewScreen } from "@/components/subjects/subjects-overview-screen";
 
 export default function SubjectsScreen() {
-  return <PlaceholderTabScreen name="Subjects" />;
+  return <SubjectsOverviewScreen />;
 }

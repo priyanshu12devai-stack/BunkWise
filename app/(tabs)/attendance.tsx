@@ -1,5 +1,5 @@
-import { PlaceholderTabScreen } from "@/components/navigation/placeholder-tab-screen";
+import { AttendanceLoggingScreen } from "@/components/attendance/attendance-logging-screen";
 
 export default function AttendanceScreen() {
-  return <PlaceholderTabScreen name="Attendance" />;
+  return <AttendanceLoggingScreen />;
 }

@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 
 import { useAppFonts } from "@/hooks/use-app-fonts";
-import { useSemesterSetupStore } from "@/store/semester-setup-store";
+import { useAttendanceStore } from "@/store/attendance-store";
 import { colors } from "@/theme";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -25,11 +25,21 @@ function RootNavigator() {
   const router = useRouter();
   const [fontsLoaded, fontError] = useAppFonts();
   const { isLoaded, isSignedIn, userId } = useAuth();
-  const hasHydrated = useSemesterSetupStore((state) => state.hasHydrated);
-  const hasCompletedSetup = useSemesterSetupStore((state) =>
+  const hasHydrated = useAttendanceStore((state) => state.hasHydrated);
+  const hasCompletedSetup = useAttendanceStore((state) =>
     userId ? Boolean(state.setupsByUserId[userId]?.isSetupComplete) : false,
   );
-  const isReady = Boolean((fontsLoaded || fontError) && isLoaded && hasHydrated);
+  const initializeUser = useAttendanceStore((state) => state.initializeUser);
+  const appResourcesReady = Boolean(
+    (fontsLoaded || fontError) && isLoaded && hasHydrated,
+  );
+  const isReady = appResourcesReady;
+
+  useEffect(() => {
+    if (!appResourcesReady || !isSignedIn || !userId) return;
+
+    initializeUser(userId);
+  }, [appResourcesReady, initializeUser, isSignedIn, userId]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -39,7 +49,12 @@ function RootNavigator() {
       return;
     }
 
-    router.replace(hasCompletedSetup ? "/" : "/setup-wizard");
+    if (!hasCompletedSetup) {
+      router.replace("/setup-wizard");
+      return;
+    }
+
+    router.replace("/");
   }, [hasCompletedSetup, isReady, isSignedIn, router, userId]);
 
   if (!isReady) {
