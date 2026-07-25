@@ -13,25 +13,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { weeklySchedule as defaultWeeklySchedule } from "@/data/schedule";
 import { subjects as defaultSubjects } from "@/data/subjects";
+import { getScheduleSlotsForDate } from "@/lib/schedule";
 import { useAttendanceStore } from "@/store/attendance-store";
 import type {
   AttendanceLog,
   AttendanceStatus,
   DateString,
-  DayOfWeek,
   ScheduleSlot,
   Subject,
 } from "@/types/attendance";
-
-const DAY_KEYS: DayOfWeek[] = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
 
 const STATUS_OPTIONS: {
   activeChipClass: string;
@@ -124,7 +114,6 @@ export function AttendanceLoggingScreen() {
   const semesterStart = setup?.semester.startDate;
   const canGoBack = !semesterStart || selectedDate > semesterStart;
   const canGoForward = selectedDate < today;
-  const selectedDay = DAY_KEYS[getDateFromString(selectedDate).getDay()];
   const isHoliday =
     setup?.semester.holidays.some((holiday) =>
       isDateInRange(selectedDate, holiday.startDate, holiday.endDate),
@@ -139,14 +128,19 @@ export function AttendanceLoggingScreen() {
       subjects.map((subject) => [subject.id, subject]),
     );
 
-    return (schedule[selectedDay] ?? [])
+    return getScheduleSlotsForDate(schedule, selectedDate)
       .map((slot) => {
         const subject = subjectsById.get(slot.subjectId);
         return subject ? { ...slot, subject } : null;
       })
       .filter((item): item is ScheduledClass => item !== null)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
-  }, [isHoliday, selectedDay, setup?.subjects, setup?.weeklySchedule]);
+  }, [
+    isHoliday,
+    selectedDate,
+    setup?.subjects,
+    setup?.weeklySchedule,
+  ]);
 
   const logsBySlotId = useMemo(
     () =>

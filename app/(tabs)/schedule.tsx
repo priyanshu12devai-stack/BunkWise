@@ -1,5 +1,5 @@
-import { PlaceholderTabScreen } from "@/components/navigation/placeholder-tab-screen";
+import { ScheduleScreen as ScheduleOverviewScreen } from "@/components/schedule/schedule-screen";
 
 export default function ScheduleScreen() {
-  return <PlaceholderTabScreen name="Schedule" />;
+  return <ScheduleOverviewScreen />;
 }

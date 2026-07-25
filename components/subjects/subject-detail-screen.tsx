@@ -1,9 +1,16 @@
 import { useUser } from "@clerk/expo";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { ArrowLeft, CalendarDays, Check, X } from "lucide-react-native";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Check,
+  Trash2,
+  X,
+} from "lucide-react-native";
 import { useMemo } from "react";
 import {
+  Alert,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -100,6 +107,9 @@ export function SubjectDetailScreen({ subjectId }: { subjectId: string }) {
   );
   const setAttendanceLog = useAttendanceStore(
     (state) => state.setAttendanceLog,
+  );
+  const archiveSubject = useAttendanceStore(
+    (state) => state.archiveSubject,
   );
 
   const subject = setup?.subjects.find((item) => item.id === subjectId);
@@ -200,6 +210,29 @@ export function SubjectDetailScreen({ subjectId }: { subjectId: string }) {
       status: NEXT_STATUS[log.status],
     });
     await Haptics.selectionAsync();
+  };
+
+  const confirmArchiveSubject = () => {
+    if (!userId || !subject) return;
+
+    Alert.alert(
+      "Archive this subject?",
+      `${subject.name} will be removed from current subjects and future schedules. Its attendance history will be preserved.`,
+      [
+        { style: "cancel", text: "Cancel" },
+        {
+          onPress: () => {
+            archiveSubject(userId, subject.id, getLocalDateString(new Date()));
+            void Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Warning,
+            ).catch(() => undefined);
+            router.replace("/subjects");
+          },
+          style: "destructive",
+          text: "Archive subject",
+        },
+      ],
+    );
   };
 
   if (!subject) {
@@ -407,6 +440,22 @@ export function SubjectDetailScreen({ subjectId }: { subjectId: string }) {
             </Text>
           </View>
         )}
+
+        {!subject.archivedFromDate ? (
+          <TouchableOpacity
+            accessibilityHint="Preserves attendance history and removes future scheduled classes"
+            accessibilityLabel={`Archive ${subject.name}`}
+            accessibilityRole="button"
+            activeOpacity={0.72}
+            className="mt-8 min-h-[56px] flex-row items-center justify-center gap-2 rounded-[18px] border border-[#51212D] bg-[#241218]"
+            onPress={confirmArchiveSubject}
+          >
+            <Trash2 color="#FF668A" size={19} strokeWidth={2.2} />
+            <Text className="font-jakarta-bold text-[14px] text-[#FF668A]">
+              Archive subject
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

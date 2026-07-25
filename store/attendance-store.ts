@@ -6,9 +6,12 @@ import {
   type StateStorage,
 } from "zustand/middleware";
 
+import { getPreviousDate } from "@/lib/schedule";
 import type {
   AttendanceLog,
+  DateString,
   DayOfWeek,
+  ScheduleSlot,
   Semester,
   Subject,
   WeeklySchedule,
@@ -32,12 +35,30 @@ type AttendanceState = {
   logsByUserId: Record<string, AttendanceLog[]>;
   setupDraftsByUserId: Record<string, SemesterSetupData>;
   setupsByUserId: Record<string, CompletedSemesterSetup>;
+  archiveSubject: (
+    userId: string,
+    subjectId: string,
+    archivedFromDate: DateString,
+  ) => void;
   completeSetup: (userId: string, setup: SemesterSetupData) => void;
   initializeUser: (userId: string) => void;
   mergeLegacyAttendance: () => Promise<void>;
   resetAll: () => void;
   resetUser: (userId: string) => void;
   saveSetupDraft: (userId: string, setup: SemesterSetupData) => void;
+  saveScheduleSlot: (
+    userId: string,
+    day: DayOfWeek,
+    slot: ScheduleSlot,
+    effectiveFromDate: DateString,
+    replacedSlotId?: string,
+  ) => void;
+  removeScheduleSlot: (
+    userId: string,
+    day: DayOfWeek,
+    slotId: string,
+    effectiveFromDate: DateString,
+  ) => void;
   setAttendanceLog: (userId: string, log: AttendanceLog) => void;
   setHasHydrated: (hasHydrated: boolean) => void;
 };
@@ -98,6 +119,69 @@ export const useAttendanceStore = create<AttendanceState>()(
       logsByUserId: {},
       setupDraftsByUserId: {},
       setupsByUserId: {},
+      archiveSubject: (userId, subjectId, archivedFromDate) =>
+        set((state) => {
+          const setup = state.setupsByUserId[userId];
+          if (!setup) return state;
+
+          const previousDate = getPreviousDate(archivedFromDate);
+          const subjects = setup.subjects.map((subject) =>
+            subject.id === subjectId
+              ? { ...subject, archivedFromDate }
+              : subject,
+          );
+          const weeklySchedule = Object.fromEntries(
+            Object.entries(setup.weeklySchedule).map(([day, slots]) => [
+              day,
+              slots.flatMap((slot) => {
+                if (
+                  slot.subjectId !== subjectId ||
+                  (slot.effectiveUntilDate &&
+                    slot.effectiveUntilDate < archivedFromDate)
+                ) {
+                  return [slot];
+                }
+
+                if (
+                  slot.effectiveFromDate &&
+                  slot.effectiveFromDate >= archivedFromDate
+                ) {
+                  return [];
+                }
+
+                return [
+                  {
+                    ...slot,
+                    effectiveUntilDate: previousDate,
+                  },
+                ];
+              }),
+            ]),
+          ) as WeeklySchedule;
+          const nextSetup: CompletedSemesterSetup = {
+            ...setup,
+            subjects,
+            weeklySchedule,
+          };
+          const draft = state.setupDraftsByUserId[userId];
+
+          return {
+            setupDraftsByUserId: draft
+              ? {
+                  ...state.setupDraftsByUserId,
+                  [userId]: {
+                    ...draft,
+                    subjects,
+                    weeklySchedule,
+                  },
+                }
+              : state.setupDraftsByUserId,
+            setupsByUserId: {
+              ...state.setupsByUserId,
+              [userId]: nextSetup,
+            },
+          };
+        }),
       completeSetup: (userId, setup) =>
         set((state) => {
           const completedSetup: CompletedSemesterSetup = {
@@ -204,6 +288,144 @@ export const useAttendanceStore = create<AttendanceState>()(
             [userId]: setup,
           },
         })),
+      saveScheduleSlot: (
+        userId,
+        day,
+        slot,
+        effectiveFromDate,
+        replacedSlotId,
+      ) =>
+        set((state) => {
+          const setup = state.setupsByUserId[userId];
+          if (!setup) return state;
+
+          const currentSlots = setup.weeklySchedule[day] ?? [];
+          const replacedSlot = replacedSlotId
+            ? currentSlots.find((item) => item.id === replacedSlotId)
+            : undefined;
+          let nextSlots: ScheduleSlot[];
+
+          if (
+            replacedSlot &&
+            replacedSlot.effectiveFromDate === effectiveFromDate
+          ) {
+            nextSlots = currentSlots.map((item) =>
+              item.id === replacedSlot.id
+                ? {
+                    ...slot,
+                    id: replacedSlot.id,
+                    effectiveFromDate,
+                    effectiveUntilDate: replacedSlot.effectiveUntilDate,
+                  }
+                : item,
+            );
+          } else if (replacedSlot) {
+            nextSlots = [
+              ...currentSlots.map((item) =>
+                item.id === replacedSlot.id
+                  ? {
+                      ...item,
+                      effectiveUntilDate: getPreviousDate(effectiveFromDate),
+                    }
+                  : item,
+              ),
+              {
+                ...slot,
+                id: `${replacedSlot.id}-from-${effectiveFromDate}-${Date.now()}`,
+                effectiveFromDate,
+                effectiveUntilDate: undefined,
+              },
+            ];
+          } else {
+            nextSlots = [
+              ...currentSlots,
+              {
+                ...slot,
+                effectiveFromDate,
+                effectiveUntilDate: undefined,
+              },
+            ];
+          }
+
+          nextSlots.sort((first, second) =>
+            first.startTime.localeCompare(second.startTime),
+          );
+
+          const nextWeeklySchedule: WeeklySchedule = {
+            ...setup.weeklySchedule,
+            [day]: nextSlots,
+          };
+          const nextSetup: CompletedSemesterSetup = {
+            ...setup,
+            weeklySchedule: nextWeeklySchedule,
+          };
+          const draft = state.setupDraftsByUserId[userId];
+
+          return {
+            setupDraftsByUserId: draft
+              ? {
+                  ...state.setupDraftsByUserId,
+                  [userId]: {
+                    ...draft,
+                    weeklySchedule: nextWeeklySchedule,
+                  },
+                }
+              : state.setupDraftsByUserId,
+            setupsByUserId: {
+              ...state.setupsByUserId,
+              [userId]: nextSetup,
+            },
+          };
+        }),
+      removeScheduleSlot: (
+        userId,
+        day,
+        slotId,
+        effectiveFromDate,
+      ) =>
+        set((state) => {
+          const setup = state.setupsByUserId[userId];
+          if (!setup) return state;
+
+          const nextSlots = (setup.weeklySchedule[day] ?? []).flatMap(
+            (slot) => {
+              if (slot.id !== slotId) return [slot];
+              if (slot.effectiveFromDate === effectiveFromDate) return [];
+
+              return [
+                {
+                  ...slot,
+                  effectiveUntilDate: getPreviousDate(effectiveFromDate),
+                },
+              ];
+            },
+          );
+          const weeklySchedule: WeeklySchedule = {
+            ...setup.weeklySchedule,
+            [day]: nextSlots,
+          };
+          const nextSetup: CompletedSemesterSetup = {
+            ...setup,
+            weeklySchedule,
+          };
+          const draft = state.setupDraftsByUserId[userId];
+
+          return {
+            setupDraftsByUserId: draft
+              ? {
+                  ...state.setupDraftsByUserId,
+                  [userId]: {
+                    ...draft,
+                    weeklySchedule,
+                  },
+                }
+              : state.setupDraftsByUserId,
+            setupsByUserId: {
+              ...state.setupsByUserId,
+              [userId]: nextSetup,
+            },
+          };
+        }),
       setAttendanceLog: (userId, log) =>
         set((state) => {
           const currentLogs = state.logsByUserId[userId] ?? [];
